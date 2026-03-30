@@ -385,6 +385,8 @@ impl Focusable for NonFocusableHandle {
 struct SettingsFieldMetadata {
     placeholder: Option<&'static str>,
     should_do_titlecase: Option<bool>,
+    show_reset_control: Option<bool>,
+    show_setting_link: Option<bool>,
 }
 
 pub fn init(cx: &mut App) {
@@ -525,6 +527,7 @@ fn init_renderers(cx: &mut App) {
         .add_basic_renderer::<settings::NotifyWhenAgentWaiting>(render_dropdown)
         .add_basic_renderer::<settings::NewThreadLocation>(render_dropdown)
         .add_basic_renderer::<settings::ImageFileSizeUnit>(render_dropdown)
+        .add_basic_renderer::<settings::GitPanelGrouping>(render_dropdown)
         .add_basic_renderer::<settings::StatusStyle>(render_dropdown)
         .add_basic_renderer::<settings::EncodingDisplayOptions>(render_dropdown)
         .add_basic_renderer::<settings::PaneSplitDirectionHorizontal>(render_dropdown)
@@ -1152,6 +1155,16 @@ fn render_settings_item(
 ) -> Stateful<Div> {
     let (found_in_file, _) = setting_item.field.file_set_in(file.clone(), cx);
     let file_set_in = SettingsUiFile::from_settings(found_in_file.clone());
+    let show_reset_control = setting_item
+        .metadata
+        .as_deref()
+        .and_then(|metadata| metadata.show_reset_control)
+        .unwrap_or(true);
+    let show_setting_link = setting_item
+        .metadata
+        .as_deref()
+        .and_then(|metadata| metadata.show_setting_link)
+        .unwrap_or(true);
 
     h_flex()
         .id(setting_item.title)
@@ -1169,7 +1182,7 @@ fn render_settings_item(
                         .gap_1()
                         .child(Label::new(SharedString::new_static(setting_item.title)))
                         .when_some(
-                            if sub_field {
+                            if sub_field || !show_reset_control {
                                 None
                             } else {
                                 setting_item
@@ -1213,7 +1226,7 @@ fn render_settings_item(
                 ),
         )
         .child(control)
-        .when(settings_window.sub_page_stack.is_empty(), |this| {
+        .when(show_setting_link && settings_window.sub_page_stack.is_empty(), |this| {
             this.child(render_settings_item_link(
                 setting_item.description,
                 setting_item.field.json_path(),
@@ -1344,7 +1357,12 @@ impl PartialEq for SettingItem {
             && self.description == other.description
             && (match (&self.metadata, &other.metadata) {
                 (None, None) => true,
-                (Some(m1), Some(m2)) => m1.placeholder == m2.placeholder,
+                (Some(m1), Some(m2)) => {
+                    m1.placeholder == m2.placeholder
+                        && m1.should_do_titlecase == m2.should_do_titlecase
+                        && m1.show_reset_control == m2.show_reset_control
+                        && m1.show_setting_link == m2.show_setting_link
+                }
                 _ => false,
             })
     }

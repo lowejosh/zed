@@ -5225,7 +5225,7 @@ fn panels_page() -> SettingsPage {
         ]
     }
 
-    fn git_panel_section() -> [SettingsPageItem; 14] {
+    fn git_panel_section() -> [SettingsPageItem; 15] {
         [
             SettingsPageItem::SectionHeader("Git Panel"),
             SettingsPageItem::SettingItem(SettingItem {
@@ -5328,6 +5328,25 @@ fn panels_page() -> SettingsPage {
                     },
                 }),
                 metadata: None,
+                files: USER,
+            }),
+            SettingsPageItem::SettingItem(SettingItem {
+                title: "Grouping",
+                description: "How to group entries in the Git panel.",
+                field: Box::new(SettingField {
+                    json_path: Some("git_panel.grouping"),
+                    pick: |settings_content| {
+                        settings_content.git_panel.as_ref()?.grouping.as_ref()
+                    },
+                    write: |settings_content, value| {
+                        settings_content.git_panel.get_or_insert_default().grouping = value;
+                    },
+                }),
+                metadata: Some(Box::new(SettingsFieldMetadata {
+                    show_reset_control: Some(false),
+                    show_setting_link: Some(false),
+                    ..Default::default()
+                })),
                 files: USER,
             }),
             SettingsPageItem::SettingItem(SettingItem {
